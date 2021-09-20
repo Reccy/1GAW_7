@@ -20,9 +20,4 @@ public class BezierPoint : MonoBehaviour
             }
         }
     }
-
-    private void OnDrawGizmos()
-    {
-        Gizmos.DrawWireSphere(Point, 0.1f);
-    }
 }
