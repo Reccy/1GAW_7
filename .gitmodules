@@ -1,0 +1,3 @@
+[submodule "Assets/UnityDebugExtensions"]
+	path = Assets/UnityDebugExtensions
+	url = git@github.com:Reccy/UnityDebugExtensions.git
