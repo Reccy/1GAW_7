@@ -14,6 +14,11 @@ public class TrackSegment : MonoBehaviour
     [SerializeField] private TrackSegment m_nextAlt;
     private BezierCurve m_curve;
 
+    public TrackSegment Prev => m_previous;
+    public TrackSegment PrevAlt => m_previousAlt;
+    public TrackSegment Next => m_next;
+    public TrackSegment NextAlt => m_nextAlt;
+
     public bool IsJunction => m_nextAlt != null;
 
     [SerializeField] private GameObject m_trackSegmentPrefab;
@@ -46,6 +51,8 @@ public class TrackSegment : MonoBehaviour
 
         mainPolyline.SetPoints(points);
     }
+
+    public float Length => m_curve.Length;
 
     public Vector2 Center()
     {

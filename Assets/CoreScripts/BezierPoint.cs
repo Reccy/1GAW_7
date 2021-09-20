@@ -12,6 +12,9 @@ public class BezierPoint : MonoBehaviour
 
     private void Update()
     {
+        if (Application.isPlaying)
+            return;
+
         if (transform.hasChanged)
         {
             if (OnTransformChanged != null)

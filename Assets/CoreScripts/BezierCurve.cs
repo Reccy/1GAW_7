@@ -18,6 +18,19 @@ public class BezierCurve
     private Vector2 m_pointC;
     private Vector2 m_pointD;
 
+    private bool m_lengthCalculated = false;
+    private float m_length;
+    public float Length
+    {
+        get
+        {
+            if (!m_lengthCalculated)
+                CalculateLength();
+
+            return m_length;
+        }
+    }
+
     public BezierCurve(Vector2 pointA, Vector2 pointB, Vector2 pointC, Vector2 pointD)
     {
         m_pointA = pointA;
@@ -55,11 +68,26 @@ public class BezierCurve
         m_lineF = new LineSegment(pointA, pointB);
     }
 
+    private void CalculateLength()
+    {
+        m_lengthCalculated = true;
+        float result = 0;
+
+        for (int i = 1; i <= 32; ++i)
+        {
+            result += Vector2.Distance(Point(i - 1), Point(i)); ;
+        }
+
+        m_length = result;
+    }
+
     private void OnBezierPointAChanged(BezierPoint point)
     {
         m_pointA = point.Point;
 
         m_lineA.Begin = m_pointA;
+
+        m_lengthCalculated = false;
     }
 
     private void OnBezierPointBChanged(BezierPoint point)
@@ -68,6 +96,8 @@ public class BezierCurve
 
         m_lineA.End = m_pointB;
         m_lineB.Begin = m_pointB;
+
+        m_lengthCalculated = false;
     }
 
     private void OnBezierPointCChanged(BezierPoint point)
@@ -76,6 +106,8 @@ public class BezierCurve
 
         m_lineB.End = m_pointC;
         m_lineC.Begin = m_pointC;
+
+        m_lengthCalculated = false;
     }
     
     private void OnBezierPointDChanged(BezierPoint point)
@@ -83,6 +115,8 @@ public class BezierCurve
         m_pointD = point.Point;
 
         m_lineC.End = m_pointD;
+
+        m_lengthCalculated = false;
     }
 
     public Vector2 Point(float t)
