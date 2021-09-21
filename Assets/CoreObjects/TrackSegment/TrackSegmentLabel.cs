@@ -9,6 +9,9 @@ public class TrackSegmentLabel : MonoBehaviour
 
     private void Awake()
     {
+        if (Application.isPlaying)
+            Destroy(gameObject);
+
         m_trackSegment = GetComponentInParent<TrackSegment>();
     }
 

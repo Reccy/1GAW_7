@@ -85,6 +85,15 @@ public class TrackSegment : MonoBehaviour
         return m_curve.Point(t);
     }
 
+    public Vector2 PointD(float dist)
+    {
+#if UNITY_EDITOR
+        m_curve = new BezierCurve(m_pointA, m_pointB, m_pointC, m_pointD);
+#endif
+
+        return m_curve.PointDist(dist);
+    }
+
 #if UNITY_EDITOR
     private void CreateNextTrackSegment()
     {

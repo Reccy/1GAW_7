@@ -206,7 +206,7 @@ public class BezierCurve
         int idLower = 0;
         int idUpper = 1;
         float iFloat = 0;
-        for (int i = 0; i < count; ++i)
+        for (int i = 0; i < count - 1; ++i)
         {
             float lower = m_dLut[idLower];
             float upper = m_dLut[idUpper];
