@@ -26,7 +26,7 @@ public class TrackSegment : MonoBehaviour
     [SerializeField] private BezierPoint m_pointB;
     [SerializeField] private BezierPoint m_pointC;
     [SerializeField] private BezierPoint m_pointD;
-    [SerializeField] private int m_points = 16;
+    [SerializeField] private int m_detailLevel = 32;
 
 #if UNITY_EDITOR
     [InspectorButton("CreateNextTrackSegment", ButtonWidth = 128)] public bool addSegment;
@@ -42,9 +42,9 @@ public class TrackSegment : MonoBehaviour
 
         List<Vector2> points = new List<Vector2>();
 
-        for (int i = 0; i <= m_points; ++i)
+        for (int i = 0; i <= m_detailLevel; ++i)
         {
-            float t = (float)i / (float)m_points;
+            float t = (float)i / (float)m_detailLevel;
 
             points.Add(transform.InverseTransformPoint(m_curve.Point(t)));
         }
@@ -57,6 +57,16 @@ public class TrackSegment : MonoBehaviour
     public Vector2 Tangent(float t)
     {
         return m_curve.Tangent(t);
+    }
+
+    public float T(float dist)
+    {
+        return m_curve.T(dist);
+    }
+
+    public float Distance(float t)
+    {
+        return m_curve.Distance(t);
     }
 
     public Vector2 Center()
@@ -135,10 +145,10 @@ public class TrackSegment : MonoBehaviour
             c = Color.green;
         }
 
-        for (int i = 1; i <= m_points; ++i)
+        for (int i = 1; i <= m_detailLevel; ++i)
         {
-            float p1 = (float)(i - 1) / (float)m_points;
-            float p2 = (float)i / (float)m_points;
+            float p1 = (float)(i - 1) / (float)m_detailLevel;
+            float p2 = (float)i / (float)m_detailLevel;
 
             Debug2.DrawArrow(m_curve.Point(p1), m_curve.Point(p2), c, 0.1f);
         }
@@ -153,6 +163,17 @@ public class TrackSegment : MonoBehaviour
 
         Gizmos.DrawLine(m_pointA.Point, m_pointB.Point);
         Gizmos.DrawLine(m_pointC.Point, m_pointD.Point);
+
+        float length = m_curve.Length;
+        float accumulated = 0;
+        float step = 0.5f;
+
+        while (accumulated < length)
+        {
+            Gizmos.DrawWireSphere(m_curve.PointDist(accumulated), 0.25f);
+
+            accumulated += step;
+        }
     }
 #endif
 }

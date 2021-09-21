@@ -6,6 +6,7 @@ public class TrainEngine : MonoBehaviour
 {
     [SerializeField] private TrackSegment m_currentSegment;
     [SerializeField] private float m_currentT = 0;
+    public float m_currentD = 0;
 
     private void OnValidate()
     {
@@ -30,6 +31,8 @@ public class TrainEngine : MonoBehaviour
             m_currentT -= 1;
         }
 
+        m_currentD = m_currentSegment.Distance(m_currentT);
+
         UpdatePosition();
     }
 
@@ -41,7 +44,5 @@ public class TrainEngine : MonoBehaviour
         Vector2 lookDir = m_currentSegment.Tangent(m_currentT);
 
         transform.rotation = Quaternion.LookRotation(Vector3.forward, lookDir);
-
-        //Debug2.DrawArrow(transform.position, transform.position + (Vector3)lookDir, Color.blue);
     }
 }

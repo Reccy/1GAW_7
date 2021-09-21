@@ -18,16 +18,20 @@ public class BezierCurve
     private Vector2 m_pointC;
     private Vector2 m_pointD;
 
-    private bool m_lengthCalculated = false;
-    private float m_length;
+    // LUT = LookUp Table
+    private const int LUT_DETAIL = 32;
+    private bool m_lutBuilt = false;
+    private float[] m_tLut;
+    private float[] m_dLut;
+
+    private float m_totalLength;
     public float Length
     {
         get
         {
-            if (!m_lengthCalculated)
-                CalculateLength();
+            BuildLUT();
 
-            return m_length;
+            return m_totalLength;
         }
     }
 
@@ -66,19 +70,34 @@ public class BezierCurve
         m_lineE = new LineSegment(pointB, pointC);
 
         m_lineF = new LineSegment(pointA, pointB);
+
+        m_tLut = new float[LUT_DETAIL];
+        m_dLut = new float[LUT_DETAIL];
     }
 
-    private void CalculateLength()
+    // Code adapted from Freya Holmer: https://docs.google.com/presentation/d/10XjxscVrm5LprOmG-VB2DltVyQ_QygD26N6XC2iap2A/edit#slide=id.gdefa50559_1_50
+    private void BuildLUT()
     {
-        m_lengthCalculated = true;
-        float result = 0;
+        if (m_lutBuilt)
+            return;
 
-        for (int i = 1; i <= 32; ++i)
+        m_tLut[0] = 0f;
+        m_dLut[0] = 0f;
+        m_totalLength = 0;
+        Vector2 prev = m_pointA;
+
+        for (int i = 1; i < LUT_DETAIL; ++i)
         {
-            result += Vector2.Distance(Point(i - 1), Point(i)); ;
+            float t = (float)i / (m_tLut.Length - 1);
+            Vector2 pt = Point(t);
+            float diff = (prev - pt).magnitude;
+            m_totalLength += diff;
+            m_tLut[i] = t;
+            m_dLut[i] = m_totalLength;
+            prev = pt;
         }
 
-        m_length = result;
+        m_lutBuilt = true;
     }
 
     private void OnBezierPointAChanged(BezierPoint point)
@@ -87,7 +106,7 @@ public class BezierCurve
 
         m_lineA.Begin = m_pointA;
 
-        m_lengthCalculated = false;
+        m_lutBuilt = false;
     }
 
     private void OnBezierPointBChanged(BezierPoint point)
@@ -97,7 +116,7 @@ public class BezierCurve
         m_lineA.End = m_pointB;
         m_lineB.Begin = m_pointB;
 
-        m_lengthCalculated = false;
+        m_lutBuilt = false;
     }
 
     private void OnBezierPointCChanged(BezierPoint point)
@@ -107,7 +126,7 @@ public class BezierCurve
         m_lineB.End = m_pointC;
         m_lineC.Begin = m_pointC;
 
-        m_lengthCalculated = false;
+        m_lutBuilt = false;
     }
     
     private void OnBezierPointDChanged(BezierPoint point)
@@ -116,7 +135,7 @@ public class BezierCurve
 
         m_lineC.End = m_pointD;
 
-        m_lengthCalculated = false;
+        m_lutBuilt = false;
     }
 
     public Vector2 Point(float t)
@@ -133,6 +152,28 @@ public class BezierCurve
         return m_lineF.Point(t);
     }
 
+    // Returns approximate distance at the given t value along the curve
+    public float Distance(float t)
+    {
+        BuildLUT();
+
+        return SampleDistance(t);
+    }
+
+    // Returns approximate t value at the given distance along the curve
+    public float T(float dist)
+    {
+        BuildLUT();
+
+        return SampleT(dist);
+    }
+
+    public Vector2 PointDist(float dist)
+    {
+        float t = T(dist);
+        return Point(t);
+    }
+
     public Vector2 Tangent(float t)
     {
         m_lineD.Begin = m_lineA.Point(t);
@@ -145,5 +186,86 @@ public class BezierCurve
         Vector2 p2 = m_lineE.Point(t);
 
         return (p2 - p1).normalized;
+    }
+
+    private float SampleT(float dist)
+    {
+        int count = m_tLut.Length;
+
+        if (count == 0)
+        {
+            Debug.LogError("Unable to sample array - it has no elements");
+            return 0;
+        }
+
+        if (count == 1)
+        {
+            return m_tLut[0];
+        }
+
+        int idLower = 0;
+        int idUpper = 1;
+        float iFloat = 0;
+        for (int i = 0; i < count; ++i)
+        {
+            float lower = m_dLut[idLower];
+            float upper = m_dLut[idUpper];
+
+            if (lower <= dist && dist <= upper)
+            {
+                iFloat = Mathf.InverseLerp(lower, upper, dist);
+                break;
+            }
+
+            idLower++;
+            idUpper++;
+        }
+
+        if (idUpper >= count)
+        {
+            return m_tLut[count - 1];
+        }
+
+        if (idLower < 0)
+        {
+            return m_tLut[0];
+        }
+
+        var r = Mathf.Lerp(m_tLut[idLower], m_tLut[idUpper], iFloat);
+
+        return r;
+    }
+
+    // Source: https://docs.google.com/presentation/d/10XjxscVrm5LprOmG-VB2DltVyQ_QygD26N6XC2iap2A/edit#slide=id.gdefa50559_1_64
+    private float SampleDistance(float t)
+    {
+        int count = m_dLut.Length;
+
+        if (count == 0)
+        {
+            Debug.LogError("Unable to sample array - it has no elements");
+            return 0;
+        }
+
+        if (count == 1)
+        {
+            return m_dLut[0];
+        }
+
+        float iFloat = t * (count - 1);
+        int idLower = Mathf.FloorToInt(iFloat);
+        int idUpper = Mathf.FloorToInt(iFloat + 1);
+
+        if (idUpper >= count)
+        {
+            return m_dLut[count - 1];
+        }
+
+        if (idLower < 0)
+        {
+            return m_dLut[0];
+        }
+
+        return Mathf.Lerp(m_dLut[idLower], m_dLut[idUpper], iFloat - idLower);
     }
 }
