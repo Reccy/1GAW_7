@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[ExecuteInEditMode()]
+[ExecuteInEditMode]
 public class BezierPoint : MonoBehaviour
 {
     public Vector2 Point => transform.position;

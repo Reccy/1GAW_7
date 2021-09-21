@@ -170,8 +170,7 @@ public class BezierCurve
 
     public Vector2 PointDist(float dist)
     {
-        float t = T(dist);
-        return Point(t);
+        return Point(T(dist));
     }
 
     public Vector2 Tangent(float t)
@@ -231,9 +230,7 @@ public class BezierCurve
             return m_tLut[0];
         }
 
-        var r = Mathf.Lerp(m_tLut[idLower], m_tLut[idUpper], iFloat);
-
-        return r;
+        return Mathf.Lerp(m_tLut[idLower], m_tLut[idUpper], iFloat);
     }
 
     // Source: https://docs.google.com/presentation/d/10XjxscVrm5LprOmG-VB2DltVyQ_QygD26N6XC2iap2A/edit#slide=id.gdefa50559_1_64
