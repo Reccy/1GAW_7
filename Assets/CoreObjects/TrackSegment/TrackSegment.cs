@@ -54,6 +54,11 @@ public class TrackSegment : MonoBehaviour
 
     public float Length => m_curve.Length;
 
+    public Vector2 Tangent(float t)
+    {
+        return m_curve.Tangent(t);
+    }
+
     public Vector2 Center()
     {
 #if UNITY_EDITOR

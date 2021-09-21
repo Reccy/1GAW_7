@@ -132,4 +132,18 @@ public class BezierCurve
 
         return m_lineF.Point(t);
     }
+
+    public Vector2 Tangent(float t)
+    {
+        m_lineD.Begin = m_lineA.Point(t);
+        m_lineD.End = m_lineB.Point(t);
+
+        m_lineE.Begin = m_lineB.Point(t);
+        m_lineE.End = m_lineC.Point(t);
+
+        Vector2 p1 = m_lineD.Point(t);
+        Vector2 p2 = m_lineE.Point(t);
+
+        return (p2 - p1).normalized;
+    }
 }

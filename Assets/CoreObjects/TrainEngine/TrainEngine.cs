@@ -7,8 +7,6 @@ public class TrainEngine : MonoBehaviour
     [SerializeField] private TrackSegment m_currentSegment;
     [SerializeField] private float m_currentT = 0;
 
-    private float FutureT => m_currentT + 0.01f;
-
     private void OnValidate()
     {
         if (m_currentSegment == null)
@@ -40,7 +38,8 @@ public class TrainEngine : MonoBehaviour
         Vector2 pos2 = m_currentSegment.Point(m_currentT);
         transform.position = new Vector3(pos2.x, pos2.y, transform.position.z);
 
-        Vector2 lookDir = (m_currentSegment.Point(FutureT) - pos2).normalized;
+        Vector2 lookDir = m_currentSegment.Tangent(m_currentT);
+
         transform.rotation = Quaternion.LookRotation(Vector3.forward, lookDir);
 
         //Debug2.DrawArrow(transform.position, transform.position + (Vector3)lookDir, Color.blue);
