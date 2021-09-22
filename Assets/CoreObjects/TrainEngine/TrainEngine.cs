@@ -5,9 +5,14 @@ using UnityEngine;
 public class TrainEngine : MonoBehaviour
 {
     [SerializeField] private TrackSegment m_currentSegment;
-    [SerializeField] private float m_currentD = 0;
+    [SerializeField] private float m_currentDistance = 0;
     private float m_currentT = 0;
     private float m_dSpeed = 0.0f;
+
+    private enum Direction { WITH_TRACK, AGAINST_TRACK }
+    [SerializeField] private Direction m_direction = Direction.WITH_TRACK;
+    private bool IsFacingWithTrack => m_direction == Direction.WITH_TRACK;
+    private bool IsFacingAgainstTrack => m_direction == Direction.AGAINST_TRACK;
 
     public bool IsMovingForward => m_dSpeed > 0;
     public bool IsStationary => m_dSpeed == 0;
@@ -63,38 +68,115 @@ public class TrainEngine : MonoBehaviour
 
     private void FixedUpdate()
     {
-        m_currentD += m_dSpeed * Time.deltaTime;
+        if (IsFacingWithTrack)
+            m_currentDistance += m_dSpeed * Time.deltaTime;
+        else
+            m_currentDistance -= m_dSpeed * Time.deltaTime;
 
-        if (IsMovingForward)
+        if ((IsMovingForward && IsFacingWithTrack) || (IsMovingBackward && IsFacingAgainstTrack))
         {
-            while (m_currentD >= m_currentSegment.Length)
+            // Can't handle small segments at high speeds
+            if (m_currentDistance > m_currentSegment.Length)
             {
-                m_currentD = Mathf.Abs(m_currentSegment.Length - m_currentD);
-                m_currentSegment = m_currentSegment.Next;
+                float carryover = m_currentDistance - m_currentSegment.Length;
+                ChangeToTrackSegment(m_currentSegment.Next, carryover);
             }
         }
-
-        if (IsMovingBackward)
+        else if ((IsMovingForward && IsFacingAgainstTrack) || (IsMovingBackward && IsFacingWithTrack))
         {
-            while (m_currentD <= 0)
+            // Can't handle small segments at high speeds
+            if (m_currentDistance < 0)
             {
-                m_currentSegment = m_currentSegment.Prev;
-                m_currentD = Mathf.Abs(m_currentSegment.Length - m_currentD);
+                float carryover = m_currentDistance;
+                ChangeToTrackSegment(m_currentSegment.Prev, carryover);
             }
         }
 
         UpdatePosition();
     }
 
+    private void ChangeToTrackSegment(TrackSegment transitioningSegment, float carryover)
+    {
+        if (IsFacingWithTrack)
+        {
+            if (IsMovingForward)
+            {
+                if (transitioningSegment.HasNextSegment(m_currentSegment))
+                {
+                    m_direction = Direction.AGAINST_TRACK;
+                    m_currentDistance = transitioningSegment.Length - carryover;
+                }
+                else
+                {
+                    m_currentDistance = carryover;
+                }
+            }
+            else if (IsMovingBackward)
+            {
+                if (transitioningSegment.HasPrevSegment(m_currentSegment))
+                {
+                    m_direction = Direction.AGAINST_TRACK;
+                    m_currentDistance = carryover;
+                }
+                else
+                {
+                    m_currentDistance = transitioningSegment.Length - carryover;
+                }
+            }
+        }
+        else if (IsFacingAgainstTrack)
+        {
+            if (IsMovingForward)
+            {
+                if (transitioningSegment.HasPrevSegment(m_currentSegment))
+                {
+                    m_direction = Direction.WITH_TRACK;
+                    m_currentDistance = carryover;
+                }
+                else
+                {
+                    m_currentDistance = transitioningSegment.Length - carryover;
+                }
+            }
+            else if (IsMovingBackward)
+            {
+                if (transitioningSegment.HasNextSegment(m_currentSegment))
+                {
+                    m_direction = Direction.WITH_TRACK;
+                    m_currentDistance = transitioningSegment.Length - carryover;
+                }
+                else
+                {
+                    m_currentDistance = carryover;
+                }
+            }
+        }
+
+        m_currentSegment = transitioningSegment;
+    }
+
     private void UpdatePosition()
     {
-        Vector2 pos2 = m_currentSegment.PointD(m_currentD);
+        Vector2 pos2 = m_currentSegment.PointDist(m_currentDistance);
+
         transform.position = new Vector3(pos2.x, pos2.y, transform.position.z);
 
-        m_currentT = m_currentSegment.T(m_currentD);
+        m_currentT = m_currentSegment.T(m_currentDistance);
 
-        Vector2 lookDir = m_currentSegment.Tangent(m_currentT);
+        Vector2 lookDir = GetLookDir();
 
         transform.rotation = Quaternion.LookRotation(Vector3.forward, lookDir);
+    }
+
+    private Vector2 GetLookDir()
+    {
+        if (IsFacingWithTrack)
+        {
+            return m_currentSegment.Tangent(m_currentT);
+        }
+        else
+        {
+            return -m_currentSegment.Tangent(m_currentT);
+        }
     }
 }

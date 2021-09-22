@@ -4,7 +4,7 @@ using System.Collections.Generic;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
-
+ 
 [SelectionBase]
 public class TrackSegment : MonoBehaviour
 {
@@ -14,12 +14,61 @@ public class TrackSegment : MonoBehaviour
     [SerializeField] private TrackSegment m_nextAlt;
     private BezierCurve m_curve;
 
-    public TrackSegment Prev => m_previous;
+    private enum JunctionSetting { NORMAL, ALT };
+    public bool NextIsNormal => m_nextJunction == JunctionSetting.NORMAL;
+    public bool NextIsAlt => m_nextJunction == JunctionSetting.ALT;
+    public bool PrevIsNormal => m_prevJunction == JunctionSetting.NORMAL;
+    public bool PrevIsAlt => m_prevJunction == JunctionSetting.ALT;
+
+    [SerializeField] private JunctionSetting m_nextJunction = JunctionSetting.NORMAL;
+    [SerializeField] private JunctionSetting m_prevJunction = JunctionSetting.NORMAL;
+
+    public TrackSegment PrevNormal => m_previous;
     public TrackSegment PrevAlt => m_previousAlt;
-    public TrackSegment Next => m_next;
+    public TrackSegment NextNormal => m_next;
     public TrackSegment NextAlt => m_nextAlt;
 
-    public bool IsJunction => m_nextAlt != null;
+    public bool HasNextSegment(TrackSegment other) => NextNormal == other || NextAlt == other;
+    public bool HasPrevSegment(TrackSegment other) => PrevNormal == other || PrevAlt == other;
+
+    public TrackSegment Next
+    {
+        get
+        {
+            if (!NextIsJunction)
+                return m_next;
+
+            if (NextIsNormal)
+            {
+                return m_next;
+            }
+            else
+            {
+                return m_nextAlt;
+            }
+        }
+    }
+
+    public TrackSegment Prev
+    {
+        get
+        {
+            if (!PrevIsJunction)
+                return m_previous;
+
+            if (PrevIsNormal)
+            {
+                return m_previous;
+            }
+            else
+            {
+                return m_previousAlt;
+            }
+        }
+    }
+
+    public bool NextIsJunction => m_nextAlt != null;
+    public bool PrevIsJunction => m_previousAlt != null;
 
     [SerializeField] private GameObject m_trackSegmentPrefab;
     [SerializeField] private BezierPoint m_pointA;
@@ -85,7 +134,7 @@ public class TrackSegment : MonoBehaviour
         return m_curve.Point(t);
     }
 
-    public Vector2 PointD(float dist)
+    public Vector2 PointDist(float dist)
     {
 #if UNITY_EDITOR
         m_curve = new BezierCurve(m_pointA, m_pointB, m_pointC, m_pointD);

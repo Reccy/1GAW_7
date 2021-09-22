@@ -29,4 +29,9 @@ public class LineSegment
     {
         return Vector2.Lerp(m_begin, m_end, t);
     }
+
+    public Vector2 NegPoint(float t)
+    {
+        return Vector2.Lerp(m_end, m_begin, t);
+    }
 }
