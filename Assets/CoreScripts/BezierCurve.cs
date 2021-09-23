@@ -80,7 +80,7 @@ public class BezierCurve
     {
         if (m_lutBuilt)
             return;
-
+        
         m_tLut[0] = 0f;
         m_dLut[0] = 0f;
         m_totalLength = 0;
@@ -185,6 +185,16 @@ public class BezierCurve
         Vector2 p2 = m_lineE.Point(t);
 
         return (p2 - p1).normalized;
+    }
+
+    public Vector2 TangentDist(float dist)
+    {
+        return Tangent(T(dist));
+    }
+
+    public Vector2 Normal(float t)
+    {
+        return Tangent(t).RotatedDeg(-90);
     }
 
     private float SampleT(float dist)

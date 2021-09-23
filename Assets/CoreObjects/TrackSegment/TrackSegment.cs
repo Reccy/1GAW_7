@@ -8,6 +8,20 @@ using UnityEditor;
 [SelectionBase]
 public class TrackSegment : MonoBehaviour
 {
+    [SerializeField] private Color m_trackColor = Color.white;
+    
+    [Range(0, 2)]
+    [SerializeField] private float m_minSpokeDistance = 0.4f;
+
+    [Range(0, 2)]
+    [SerializeField] private float m_maxSpokeDistance = 1.2f;
+    
+    [Range(-30, 0)]
+    [SerializeField] private float m_minSpokeAngle = -10.0f;
+
+    [Range(0, 30)]
+    [SerializeField] private float m_maxSpokeAngle = 10.0f;
+
     [SerializeField] private TrackSegment m_previous;
     [SerializeField] private TrackSegment m_previousAlt;
     [SerializeField] private TrackSegment m_next;
@@ -30,6 +44,11 @@ public class TrackSegment : MonoBehaviour
 
     public bool HasNextSegment(TrackSegment other) => NextNormal == other || NextAlt == other;
     public bool HasPrevSegment(TrackSegment other) => PrevNormal == other || PrevAlt == other;
+
+    private const float TRACK_WIDTH = 0.45f;
+    private const float TRACK_THICKNESS = 0.05f;
+    [SerializeField] private TrackJunctionIndicator m_trackJunctionPrefab;
+    [SerializeField] private GameObject m_trackSpokePrefab;
 
     public TrackSegment Next
     {
@@ -67,6 +86,70 @@ public class TrackSegment : MonoBehaviour
         }
     }
 
+    public TrackJunction NextJunction()
+    {
+        TrackSegment segment = this;
+        TrackJunction junction = new TrackJunction();
+
+        while (!segment.NextIsJunction)
+        {
+            segment = segment.Next;
+        }
+
+        junction.From = segment;
+        junction.Position = segment.Point(1);
+        junction.TValue = 1.0f;
+
+        return junction;
+    }
+
+    public TrackJunction PrevJunction()
+    {
+        TrackSegment segment = this;
+        TrackJunction junction = new TrackJunction();
+
+        while (!segment.PrevIsJunction)
+        {
+            segment = segment.Prev;
+        }
+
+        junction.From = segment;
+        junction.Position = segment.Point(0);
+        junction.TValue = 0.0f;
+
+        return junction;
+    }
+
+    public void SwitchNext()
+    {
+        if (m_nextAlt == null)
+            Debug.LogWarning("Switching on an non-junction");
+
+        if (NextIsNormal)
+        {
+            m_nextJunction = JunctionSetting.ALT;
+        }
+        else
+        {
+            m_nextJunction = JunctionSetting.NORMAL;
+        }
+    }
+
+    public void SwitchPrev()
+    {
+        if (m_previousAlt == null)
+            Debug.LogWarning("Switching on an non-junction");
+
+        if (PrevIsNormal)
+        {
+            m_prevJunction = JunctionSetting.ALT;
+        }
+        else
+        {
+            m_prevJunction = JunctionSetting.NORMAL;
+        }
+    }
+
     public bool NextIsJunction => m_nextAlt != null;
     public bool PrevIsJunction => m_previousAlt != null;
 
@@ -84,21 +167,77 @@ public class TrackSegment : MonoBehaviour
 
     private void Awake()
     {
+        // Setup track
         m_curve = new BezierCurve(m_pointA, m_pointB, m_pointC, m_pointD);
-        
-        Shapes.Polyline mainPolyline = gameObject.AddComponent<Shapes.Polyline>();
-        mainPolyline.Closed = false;
 
-        List<Vector2> points = new List<Vector2>();
+        GameObject leftTrackObj = new GameObject();
+        leftTrackObj.transform.parent = gameObject.transform;
+        leftTrackObj.name = "LeftTrackPolyline";
+        GameObject rightTrackObj = new GameObject();
+        rightTrackObj.transform.parent = gameObject.transform;
+        rightTrackObj.name = "RightTrackPolyline";
+
+        Shapes.Polyline leftTrackLine = leftTrackObj.AddComponent<Shapes.Polyline>();
+        Shapes.Polyline rightTrackLine = rightTrackObj.AddComponent<Shapes.Polyline>();
+        leftTrackLine.Closed = false;
+        leftTrackLine.Color = m_trackColor;
+        leftTrackLine.Thickness = TRACK_THICKNESS;
+        rightTrackLine.Closed = false;
+        rightTrackLine.Color = m_trackColor;
+        rightTrackLine.Thickness = TRACK_THICKNESS;
+
+        List<Vector2> leftPoints = new List<Vector2>();
+        List<Vector2> rightPoints = new List<Vector2>();
 
         for (int i = 0; i <= m_detailLevel; ++i)
         {
             float t = (float)i / (float)m_detailLevel;
 
-            points.Add(transform.InverseTransformPoint(m_curve.Point(t)));
+            Vector2 origin = m_curve.Point(t);
+            Vector2 right = origin + m_curve.Normal(t) * (TRACK_WIDTH * 0.5f);
+            Vector2 left = origin - m_curve.Normal(t) * (TRACK_WIDTH * 0.5f);
+
+            leftPoints.Add(transform.InverseTransformPoint(left));
+            rightPoints.Add(transform.InverseTransformPoint(right));
         }
 
-        mainPolyline.SetPoints(points);
+        float d = Random.Range(m_minSpokeDistance, m_maxSpokeDistance);
+
+        while (d < Length)
+        {
+            Vector2 p = PointDist(d);
+            Vector2 forward = TangentDist(d);
+
+            float rot = Random.Range(m_minSpokeAngle, m_maxSpokeAngle);
+            forward = forward.RotatedDeg(rot);
+
+            GameObject spoke = Instantiate(m_trackSpokePrefab);
+            spoke.transform.parent = gameObject.transform;
+            spoke.transform.position = p;
+            spoke.transform.right = forward;
+
+            float sum = Random.Range(m_minSpokeDistance, m_maxSpokeDistance);
+
+            d += sum;
+        }
+
+        leftTrackLine.SetPoints(leftPoints);
+        rightTrackLine.SetPoints(rightPoints);
+
+        // Setup Junctions
+        if (NextIsJunction)
+        {
+            TrackJunctionIndicator junctionObj = Instantiate(m_trackJunctionPrefab);
+            junctionObj.direction = TrackJunctionIndicator.Direction.WITH_TRACK;
+            junctionObj.prev = this;
+        }
+
+        if (PrevIsJunction)
+        {
+            TrackJunctionIndicator junctionObj = Instantiate(m_trackJunctionPrefab);
+            junctionObj.direction = TrackJunctionIndicator.Direction.AGAINST_TRACK;
+            junctionObj.prev = this;
+        }
     }
 
     public float Length => m_curve.Length;
@@ -106,6 +245,16 @@ public class TrackSegment : MonoBehaviour
     public Vector2 Tangent(float t)
     {
         return m_curve.Tangent(t);
+    }
+
+    public Vector2 TangentDist(float t)
+    {
+        return m_curve.TangentDist(t);
+    }
+
+    public Vector2 Normal(float t)
+    {
+        return m_curve.Normal(t);
     }
 
     public float T(float dist)

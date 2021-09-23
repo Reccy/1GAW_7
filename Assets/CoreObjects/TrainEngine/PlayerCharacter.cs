@@ -9,9 +9,10 @@ public class PlayerCharacter : MonoBehaviour
     private Player m_player;
     private TrainEngine m_trainEngine;
 
-    private bool Accelerating => m_player.GetButton("Accelerate");
-    private bool Decelerating => m_player.GetButton("Decelerate");
-    private bool Braking => Accelerating && Decelerating;
+    private bool m_accelerating = false;
+    private bool m_decelerating = false;
+    private bool m_braking = false;
+    private bool m_switchJunction = false;
 
     private void Awake()
     {
@@ -19,19 +20,32 @@ public class PlayerCharacter : MonoBehaviour
         m_trainEngine = GetComponent<TrainEngine>();
     }
 
+    private void Update()
+    {
+        m_accelerating = m_player.GetButton("Accelerate");
+        m_decelerating = m_player.GetButton("Decelerate");
+        m_braking = m_player.GetButton("Brake");
+        m_switchJunction = m_player.GetButtonDown("SwitchJunction");
+    }
+
     private void FixedUpdate()
     {
-        if (Braking)
+        if (m_braking)
         {
             m_trainEngine.Brake();
         }
-        else if (Accelerating)
+        else if (m_accelerating)
         {
             m_trainEngine.Accelerate();
         }
-        else if (Decelerating)
+        else if (m_decelerating)
         {
             m_trainEngine.Decelerate();
+        }
+
+        if (m_switchJunction)
+        {
+            m_trainEngine.SwitchJunction();
         }
     }
 }

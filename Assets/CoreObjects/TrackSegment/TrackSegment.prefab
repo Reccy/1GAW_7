@@ -91,16 +91,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a4d2025ecda77034f9f09f0e231224d7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_trackColor: {r: 0.31132078, g: 0.31132078, b: 0.31132078, a: 1}
+  m_minSpokeDistance: 0.53
+  m_maxSpokeDistance: 0.65
+  m_minSpokeAngle: -14.3
+  m_maxSpokeAngle: 15.8
   m_previous: {fileID: 0}
   m_previousAlt: {fileID: 0}
   m_next: {fileID: 0}
   m_nextAlt: {fileID: 0}
+  m_nextJunction: 0
+  m_prevJunction: 0
+  m_trackJunctionPrefab: {fileID: 2813593050948730958, guid: 50ab757e8ae53814ea40055f6ce4880f, type: 3}
+  m_trackSpokePrefab: {fileID: 4480946138641737078, guid: 8c61488ea40eafb4f85e40514c969a25, type: 3}
   m_trackSegmentPrefab: {fileID: 9180980308401584444}
   m_pointA: {fileID: 9180980309324339861}
   m_pointB: {fileID: 9180980309407480930}
   m_pointC: {fileID: 9180980308798821438}
   m_pointD: {fileID: 9180980308570060608}
-  m_points: 64
+  m_detailLevel: 32
   addSegment: 0
   addAltSegment: 0
 --- !u!1 &9180980308570060610

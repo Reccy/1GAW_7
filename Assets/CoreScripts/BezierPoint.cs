@@ -12,6 +12,7 @@ public class BezierPoint : MonoBehaviour
 
     private void Update()
     {
+#if UNITY_EDITOR
         if (Application.isPlaying)
             return;
 
@@ -23,4 +24,5 @@ public class BezierPoint : MonoBehaviour
             }
         }
     }
+#endif
 }

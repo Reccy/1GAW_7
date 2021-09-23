@@ -2,9 +2,17 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TrackJunction : MonoBehaviour
+public struct TrackJunction
 {
-    [SerializeField] private TrackSegment m_previous;
-    [SerializeField] private TrackSegment m_nextLeft;
-    [SerializeField] private TrackSegment m_nextRight;
+    public Vector2 Position;
+    public bool Null;
+    public TrackSegment From;
+    public float TValue;
+    
+    public static TrackJunction BuildNull()
+    {
+        TrackJunction nullJunction = new TrackJunction();
+        nullJunction.Null = true;
+        return nullJunction;
+    }
 }

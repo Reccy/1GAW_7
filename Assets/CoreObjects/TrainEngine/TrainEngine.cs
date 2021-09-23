@@ -18,17 +18,18 @@ public class TrainEngine : MonoBehaviour
     public bool IsStationary => m_dSpeed == 0;
     public bool IsMovingBackward => m_dSpeed < 0;
 
+    public bool IsMovingWithTrack => (IsMovingForward && IsFacingWithTrack) || (IsMovingBackward && IsFacingAgainstTrack);
+    public bool IsMovingAgainstTrack => (IsMovingForward && IsFacingAgainstTrack) || (IsMovingBackward && IsFacingWithTrack);
+
+    [SerializeField] private IntersectionUI m_intersectionUI;
+    TrackJunction m_nextJunction;
+
     private void OnValidate()
     {
         if (m_currentSegment == null)
             return;
 
         UpdatePosition();
-    }
-
-    private void Awake()
-    {
-        Debug.Log(m_currentSegment.Length);
     }
 
     public void Accelerate()
@@ -66,14 +67,53 @@ public class TrainEngine : MonoBehaviour
         }
     }
 
+    public void SwitchJunction()
+    {
+        if (IsMovingWithTrack)
+            m_nextJunction.From.SwitchNext();
+        else
+            m_nextJunction.From.SwitchPrev();
+    }
+
     private void FixedUpdate()
+    {
+        Move();
+
+        UpdatePosition();
+
+        if (IsMovingWithTrack)
+            m_nextJunction = m_currentSegment.NextJunction();
+        else if (IsMovingAgainstTrack)
+            m_nextJunction = m_currentSegment.PrevJunction();
+        else
+            m_nextJunction = TrackJunction.BuildNull();
+
+        SetIntersectionUIPosition();
+    }
+
+    private void SetIntersectionUIPosition()
+    {
+        if (m_nextJunction.Null)
+        {
+            m_intersectionUI.gameObject.SetActive(false);
+            return;
+        }
+
+        m_intersectionUI.gameObject.SetActive(true);
+
+        Vector2 normal = m_nextJunction.From.Normal(m_nextJunction.TValue);
+
+        m_intersectionUI.transform.position = new Vector3(m_nextJunction.Position.x, m_nextJunction.Position.y, -2) + (Vector3)normal;
+    }
+
+    private void Move()
     {
         if (IsFacingWithTrack)
             m_currentDistance += m_dSpeed * Time.deltaTime;
         else
             m_currentDistance -= m_dSpeed * Time.deltaTime;
 
-        if ((IsMovingForward && IsFacingWithTrack) || (IsMovingBackward && IsFacingAgainstTrack))
+        if (IsMovingWithTrack)
         {
             // Can't handle small segments at high speeds
             if (m_currentDistance > m_currentSegment.Length)
@@ -82,7 +122,7 @@ public class TrainEngine : MonoBehaviour
                 ChangeToTrackSegment(m_currentSegment.Next, carryover);
             }
         }
-        else if ((IsMovingForward && IsFacingAgainstTrack) || (IsMovingBackward && IsFacingWithTrack))
+        else if (IsMovingAgainstTrack)
         {
             // Can't handle small segments at high speeds
             if (m_currentDistance < 0)
@@ -91,8 +131,6 @@ public class TrainEngine : MonoBehaviour
                 ChangeToTrackSegment(m_currentSegment.Prev, carryover);
             }
         }
-
-        UpdatePosition();
     }
 
     private void ChangeToTrackSegment(TrackSegment transitioningSegment, float carryover)
@@ -178,5 +216,11 @@ public class TrainEngine : MonoBehaviour
         {
             return -m_currentSegment.Tangent(m_currentT);
         }
+    }
+
+    private void OnDrawGizmos()
+    {
+        Debug2.DrawArrow(transform.position, transform.position + (Vector3)m_currentSegment.Normal(m_currentT), Color.blue);
+        Debug2.DrawArrow(transform.position, transform.position + (Vector3)m_currentSegment.Tangent(m_currentT), Color.green);
     }
 }
