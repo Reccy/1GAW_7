@@ -197,6 +197,11 @@ public class BezierCurve
         return Tangent(t).RotatedDeg(-90);
     }
 
+    public Vector2 NormalDist(float dist)
+    {
+        return Normal(T(dist));
+    }
+
     private float SampleT(float dist)
     {
         int count = m_tLut.Length;

@@ -9,6 +9,8 @@ public class TrainEngine : MonoBehaviour
     private float m_currentT = 0;
     private float m_dSpeed = 0.0f;
 
+    public float CurrentSpeed => m_dSpeed;
+
     private enum Direction { WITH_TRACK, AGAINST_TRACK }
     [SerializeField] private Direction m_direction = Direction.WITH_TRACK;
     private bool IsFacingWithTrack => m_direction == Direction.WITH_TRACK;
@@ -22,7 +24,9 @@ public class TrainEngine : MonoBehaviour
     public bool IsMovingAgainstTrack => (IsMovingForward && IsFacingAgainstTrack) || (IsMovingBackward && IsFacingWithTrack);
 
     [SerializeField] private IntersectionUI m_intersectionUI;
-    TrackJunction m_nextJunction;
+    private TrackJunction m_nextJunction;
+
+    private JunctionSign m_currentSign;
 
     private void OnValidate()
     {
@@ -100,6 +104,17 @@ public class TrainEngine : MonoBehaviour
         }
 
         m_intersectionUI.gameObject.SetActive(true);
+
+        if (m_currentSign != m_nextJunction.Indicator.Sign)
+        {
+            if (m_currentSign != null)
+            {
+                m_currentSign.Deselect();
+            }
+
+            m_currentSign = m_nextJunction.Indicator.Sign;
+            m_currentSign.Select();
+        }
 
         Vector2 normal = m_nextJunction.From.Normal(m_nextJunction.TValue);
 

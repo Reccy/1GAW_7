@@ -45,8 +45,8 @@ public class TrackSegment : MonoBehaviour
     public bool HasNextSegment(TrackSegment other) => NextNormal == other || NextAlt == other;
     public bool HasPrevSegment(TrackSegment other) => PrevNormal == other || PrevAlt == other;
 
-    private const float TRACK_WIDTH = 0.45f;
-    private const float TRACK_THICKNESS = 0.05f;
+    public static readonly float TRACK_WIDTH = 0.45f;
+    public static readonly float TRACK_THICKNESS = 0.05f;
     [SerializeField] private TrackJunctionIndicator m_trackJunctionPrefab;
     [SerializeField] private GameObject m_trackSpokePrefab;
 
@@ -99,6 +99,7 @@ public class TrackSegment : MonoBehaviour
         junction.From = segment;
         junction.Position = segment.Point(1);
         junction.TValue = 1.0f;
+        junction.Indicator = segment.m_nextIndicator;
 
         return junction;
     }
@@ -116,6 +117,7 @@ public class TrackSegment : MonoBehaviour
         junction.From = segment;
         junction.Position = segment.Point(0);
         junction.TValue = 0.0f;
+        junction.Indicator = segment.m_prevIndicator;
 
         return junction;
     }
@@ -152,6 +154,9 @@ public class TrackSegment : MonoBehaviour
 
     public bool NextIsJunction => m_nextAlt != null;
     public bool PrevIsJunction => m_previousAlt != null;
+
+    private TrackJunctionIndicator m_nextIndicator;
+    private TrackJunctionIndicator m_prevIndicator;
 
     [SerializeField] private GameObject m_trackSegmentPrefab;
     [SerializeField] private BezierPoint m_pointA;
@@ -227,16 +232,16 @@ public class TrackSegment : MonoBehaviour
         // Setup Junctions
         if (NextIsJunction)
         {
-            TrackJunctionIndicator junctionObj = Instantiate(m_trackJunctionPrefab);
-            junctionObj.direction = TrackJunctionIndicator.Direction.WITH_TRACK;
-            junctionObj.prev = this;
+            m_nextIndicator = Instantiate(m_trackJunctionPrefab);
+            m_nextIndicator.direction = TrackJunctionIndicator.Direction.WITH_TRACK;
+            m_nextIndicator.prev = this;
         }
 
         if (PrevIsJunction)
         {
-            TrackJunctionIndicator junctionObj = Instantiate(m_trackJunctionPrefab);
-            junctionObj.direction = TrackJunctionIndicator.Direction.AGAINST_TRACK;
-            junctionObj.prev = this;
+            m_prevIndicator = Instantiate(m_trackJunctionPrefab);
+            m_prevIndicator.direction = TrackJunctionIndicator.Direction.AGAINST_TRACK;
+            m_prevIndicator.prev = this;
         }
     }
 
@@ -247,14 +252,19 @@ public class TrackSegment : MonoBehaviour
         return m_curve.Tangent(t);
     }
 
-    public Vector2 TangentDist(float t)
+    public Vector2 TangentDist(float dist)
     {
-        return m_curve.TangentDist(t);
+        return m_curve.TangentDist(dist);
     }
 
     public Vector2 Normal(float t)
     {
         return m_curve.Normal(t);
+    }
+
+    public Vector2 NormalDist(float dist)
+    {
+        return m_curve.NormalDist(dist);
     }
 
     public float T(float dist)

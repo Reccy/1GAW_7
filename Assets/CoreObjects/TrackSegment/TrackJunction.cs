@@ -8,6 +8,7 @@ public struct TrackJunction
     public bool Null;
     public TrackSegment From;
     public float TValue;
+    public TrackJunctionIndicator Indicator;
     
     public static TrackJunction BuildNull()
     {
