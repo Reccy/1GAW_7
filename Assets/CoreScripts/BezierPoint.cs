@@ -23,6 +23,6 @@ public class BezierPoint : MonoBehaviour
                 OnTransformChanged(this);
             }
         }
-    }
 #endif
+    }
 }
